@@ -53,3 +53,44 @@ def masked_softmax(weights, mask, dim=-1, eps=1e-30):
     masked_exps = weight_exps.masked_fill(mask == 0, eps)
     masked_sums = masked_exps.sum(dim, keepdim=True) + eps
     return masked_exps / masked_sums
+
+def mmd(y, c, n_conditions, beta, boundary):
+    """Initializes Maximum Mean Discrepancy(MMD) between every different condition.
+
+       Parameters
+       ----------
+       n_conditions: integer
+            Number of classes (conditions) the data contain.
+       beta: float
+            beta coefficient for MMD loss.
+       boundary: integer
+            If not 'None', mmd loss is only calculated on #new conditions.
+       y: torch.Tensor
+            Torch Tensor of computed latent data.
+       c: torch.Tensor
+            Torch Tensor of condition labels.
+
+       Returns
+       -------
+       Returns MMD loss.
+    """
+
+    # partition separates y into num_cls subsets w.r.t. their labels c
+    conditions_mmd = partition(y, c, n_conditions)
+    loss = torch.tensor(0.0, device=y.device)
+    if boundary is not None:
+        for i in range(boundary):
+            for j in range(boundary, n_conditions):
+                if conditions_mmd[i].size(0) < 2 or conditions_mmd[j].size(0) < 2:
+                    continue
+                loss += mmd_loss_calc(conditions_mmd[i], conditions_mmd[j])
+    else:
+        for i in range(len(conditions_mmd)):
+            if conditions_mmd[i].size(0) < 1:
+                continue
+            for j in range(i):
+                if conditions_mmd[j].size(0) < 1 or i == j:
+                    continue
+                loss += mmd_loss_calc(conditions_mmd[i], conditions_mmd[j])
+
+    return beta * loss
