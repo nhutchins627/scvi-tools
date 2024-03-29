@@ -164,6 +164,8 @@ class VAE(EmbeddingModuleMixin, BaseMinifiedModeModuleClass):
         extra_encoder_kwargs: dict | None = None,
         extra_decoder_kwargs: dict | None = None,
         batch_embedding_kwargs: dict | None = None,
+        use_mmd: bool = False,
+        beta: int = 0
     ):
         from scvi.nn import DecoderSCVI, Encoder
 
@@ -557,8 +559,11 @@ class VAE(EmbeddingModuleMixin, BaseMinifiedModeModuleClass):
 
         weighted_kl_local = kl_weight * kl_local_for_warmup + kl_local_no_warmup
 
+        if use_mmd == True:
+            mmd_loss = 
+        
         loss = torch.mean(reconst_loss + weighted_kl_local)
-
+        
         return LossOutput(
             loss=loss,
             reconstruction_loss=reconst_loss,
